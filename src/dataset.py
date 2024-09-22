@@ -92,32 +92,14 @@ class BaseDataset(Dataset):
 
 
         noise = torch.randn_like(u)
-        # noise = self.normal.sample(u.shape).cuda()
-        # noise = self.uni.sample(u.shape).cuda()
-        # noise = self.normal.sample(u.shape).cuda()
-        # noise = self.gamma.sample(u.shape).cuda()
-        # noise = noise[:, :, :, 0].clone()
-        # noise[:, :, :3] = noise[:, :, :3] * self.imu_std[0]
-        # noise[:, :, 3:6] = noise[:, :, 3:6] * self.imu_std[1]
-        # noise[:, :, :3] = noise[:, :, :3] * 8e-5 + 0e-2
-        # noise[:, :, 3:6] = noise[:, :, 3:6] * 1e-3 + 0e-2
+
         noise[:, :, :3] = noise[:, :, :3] * imu_std[0]
         noise[:, :, 3:6] = noise[:, :, 3:6] * imu_std[1]
 
 
         # bias repeatability (without in run bias stability)
         b0 = self.uni.sample(u[:, 0].shape)
-        # b0 = self.normal.sample(u[:, 0].shape).cuda()
-        # b0 = self.gamma.sample(u[:, 0].shape).cuda()
 
-        # b0 = self.uni.sample(u.shape).cuda()
-        # b0 = self.normal.sample(u.shape).cuda()
-        # b0 = self.gamma.sample(u.shape).cuda()
-
-        # b0[:, :, :3] = b0[:, :, :3] * self.imu_b0[0]*0 + 0e-2
-        # b0[:, :, 3:6] = b0[:, :, 3:6] * self.imu_b0[1]*0 + 0e-2
-        # b0[:, :, :3] = b0[:, :, :3] * 1e-3 + 5e-2
-        # b0[:, :, 3:6] = b0[:, :, 3:6] * 1e-3 + 5e-2
 
         b0[:, :3, :] = b0[:, :3, :] * imu_b0[0, 0] + imu_b0[1, 0]
         b0[:, 3:6, :] = b0[:, 3:6, :] * imu_b0[0, 1] + imu_b0[1, 1]
