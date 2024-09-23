@@ -9,7 +9,7 @@ import numpy as np
 from multiprocessing import cpu_count
 
 base_dir = os.path.dirname(os.path.realpath(__file__))
-display_only = True
+display_only = False
 data_dir = "H:/KITTI/RAW/total"
 # test a given network
 # address = os.path.join(base_dir, 'results/KITTI/2022_05_20_08_29_38/')

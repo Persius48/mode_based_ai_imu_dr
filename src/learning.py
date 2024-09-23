@@ -535,7 +535,7 @@ class LearningBasedProcessing:
                 print(name, "test_time_net = ", "{:.3f}s".format(time.time() - time_net))
                 time_IEKF = time.time()
 
-                us_fix = ys[:, :, :6] * us_noise[:, :, :6] - ys[:, :, 6:12]
+                us_fix = ys[:, :, :6] * us_noise[:, :, :6] - ys[:, :, 6:12] #is there a mistake?
                 iekf.set_Q()
                 measurements_covs = ys[:, :, 12:14]
                 Rot, v, p, b_omega, b_acc, Rot_c_i, t_c_i = \
