@@ -491,7 +491,7 @@ class LearningBasedProcessing:
                 **loss_params, **scheduler_params,
                 'n_epochs': n_epochs, 'freq_val': freq_val}
 
-    def test(self, dataset_class, dataset_params, modes):
+    def test(self, dataset_class, dataset_params, modes, display_only = False):
 
         Loss = self.train_params['loss_class']
         loss_params = self.train_params['loss']
@@ -499,8 +499,11 @@ class LearningBasedProcessing:
 
         for mode in modes:
             dataset = dataset_class(**dataset_params, mode=mode)
-            self.loop_test(dataset, criterion)
-            self.display_test(dataset, mode)
+            if display_only:
+                self.display_test(dataset, mode)
+            else:
+                self.loop_test(dataset, criterion)
+                self.display_test(dataset, mode)
 
     def loop_test(self, dataset, criterion):
         """Forward loop over test data"""
@@ -686,7 +689,7 @@ class GyroLearningBasedProcessing(LearningBasedProcessing):
             self.plot_usfix_us_omega_3(t, us_fix[:, :3], us_noise[:, :3], us[:, :3])
             self.plot_usfix_us_acc_3(t, us_fix[:, 3:6], us_noise[:, 3:6], us[:, 3:6])
             self.plot_xs_hatxs_acc_3(t[:-1], xs[:-1, 3:6], hat_xs[:, 3:6])
-
+            plt.show(block=True)
 
 
 
@@ -784,9 +787,9 @@ class GyroLearningBasedProcessing(LearningBasedProcessing):
         axs1[1].plot(t, p[:, 1])
         axs1[2].plot(t, p_gt[:, 2])
         axs1[2].plot(t, p[:, 2])
-        axs1[0].set(xlabel='time (s)', ylabel='$\mathbf{p}_n$ (m)', title="Position0")
-        axs1[1].set(xlabel='time (s)', ylabel='$\mathbf{p}_n$ (m)', title="Position1")
-        axs1[2].set(xlabel='time (s)', ylabel='$\mathbf{p}_n$ (m)', title="Position2")
+        axs1[0].set(xlabel='time (s)', ylabel='$\mathbf{p}_n$ (m)', title="Position X")
+        axs1[1].set(xlabel='time (s)', ylabel='$\mathbf{p}_n$ (m)', title="Position Y")
+        axs1[2].set(xlabel='time (s)', ylabel='$\mathbf{p}_n$ (m)', title="Position Z")
         axs1[0].grid()
         axs1[1].grid()
         axs1[2].grid()
@@ -796,8 +799,10 @@ class GyroLearningBasedProcessing(LearningBasedProcessing):
         fig_name = "p_3"
         fig1.savefig(os.path.join(self.address, self.seq, fig_name + '.png'))
         # fig1.savefig(os.path.join(self.address, self.seq, fig_name + '.eps'), format="eps")
-        fig1.clf()
-        plt.close()
+        # plt.show(block=False)
+        # plt.pause(2)
+        # fig1.clf()
+        # plt.close()
 
     def plot_V_3(self, t, v, v_gt):
         fig2, axs2 = plt.subplots(3, 1, sharex=True, figsize=(16, 9))
@@ -809,9 +814,9 @@ class GyroLearningBasedProcessing(LearningBasedProcessing):
         axs2[2].plot(t, v_gt[:, 2])
         axs2[2].plot(t, v[:, 2])
 
-        axs2[0].set(xlabel='time (s)', ylabel='$\mathbf{v}_n$ (m/s)', title="velocity0")
-        axs2[1].set(xlabel='time (s)', ylabel='$\mathbf{v}_n$ (m/s)', title="velocity1")
-        axs2[2].set(xlabel='time (s)', ylabel='$\mathbf{v}_n$ (m/s)', title="velocity2")
+        axs2[0].set(xlabel='time (s)', ylabel='$\mathbf{v}_n$ (m/s)', title="velocity x")
+        axs2[1].set(xlabel='time (s)', ylabel='$\mathbf{v}_n$ (m/s)', title="velocity y")
+        axs2[2].set(xlabel='time (s)', ylabel='$\mathbf{v}_n$ (m/s)', title="velocity z")
         axs2[0].grid()
         axs2[1].grid()
         axs2[2].grid()
@@ -821,8 +826,10 @@ class GyroLearningBasedProcessing(LearningBasedProcessing):
         fig_name = "v_3"
         fig2.savefig(os.path.join(self.address, self.seq, fig_name + '.png'))
         # fig2.savefig(os.path.join(self.address, self.seq, fig_name + '.eps'), format="eps")
-        fig2.clf()
-        plt.close()
+        # plt.show(block=False)
+        # plt.pause(2)
+        # fig2.clf()
+        # plt.close()
 
     def plot_RPY(self, t, ang, ang_gt):
         fig4, axs4 = plt.subplots(3, 1, sharex=True, figsize=(16, 9))
@@ -834,9 +841,9 @@ class GyroLearningBasedProcessing(LearningBasedProcessing):
         axs4[2].plot(t, ang_gt[:, 2])
         axs4[2].plot(t, ang[:, 2])
 
-        axs4[0].set(xlabel='time (s)', ylabel='$\mathbf{ang}_n$ (reg)', title="ang0")
-        axs4[1].set(xlabel='time (s)', ylabel='$\mathbf{ang}_n$ (reg)', title="ang1")
-        axs4[2].set(xlabel='time (s)', ylabel='$\mathbf{ang}_n$ (reg)', title="ang2")
+        axs4[0].set(xlabel='time (s)', ylabel='$\mathbf{\phi}_n$ (rad)', title="Roll")
+        axs4[1].set(xlabel='time (s)', ylabel='$\mathbf{\Theta}_n$ (rad)', title="Pitch")
+        axs4[2].set(xlabel='time (s)', ylabel='$\mathbf{\psi}_n$ (rad)', title="Yaw")
         axs4[0].grid();
         axs4[1].grid();
         axs4[2].grid()
@@ -846,29 +853,29 @@ class GyroLearningBasedProcessing(LearningBasedProcessing):
         fig_name = "RPY"
         fig4.savefig(os.path.join(self.address, self.seq, fig_name + '.png'))
         # fig4.savefig(os.path.join(self.address, self.seq, fig_name + '.eps'), format="eps")
-        fig4.clf()
-        plt.close()
+        # fig4.clf()
+        # plt.close()
 
     def plot_P_xy(self, p, p_gt):
         fig3, ax3 =  plt.subplots(figsize=(12, 10))
-        font_TNR = fm.FontProperties(family='Times New Roman', size=25, stretch=0)
+        # font_TNR = fm.FontProperties(family='Times New Roman', size=25, stretch=0)
         linewidth = 2
         ax3.plot(p_gt[:, 0], p_gt[:, 1], color='red', linestyle='-.', linewidth=linewidth)
         ax3.plot(p[:, 0], p[:, 1], color='green', linestyle='-', linewidth=linewidth)
         ax3.axis('equal')
         # ax3.set(xlabel=r'$p_n^x$ (m)', ylabel=r'$p_n^y$ (m)')
-        ax3.set_xlabel(r'$p_n^x$ (m)', fontproperties=font_TNR)
-        ax3.set_ylabel(r'$p_n^y$ (m)', fontproperties=font_TNR)
+        ax3.set_xlabel(r'$p_n^x$ (m)')#fontproperties=font_TNR
+        ax3.set_ylabel(r'$p_n^y$ (m)')#fontproperties=font_TNR
 
         ax3.grid()
-        ax3.legend(['Ground-Truth', 'Proposed'], loc='upper left', prop={'family': 'Times New Roman', 'size': 22})
+        ax3.legend(['Ground-Truth', 'Proposed'], loc='upper left', prop={'size': 15}) #'family': 'Times New Roman',
         ax3.tick_params(axis='both', labelsize=24, direction='in')
 
         fig_name = "p"
         fig3.savefig(os.path.join(self.address, self.seq, fig_name + '.svg'), format='svg', bbox_inches='tight', pad_inches=0.02)
         # fig3.savefig(os.path.join(self.address, self.seq, fig_name + '.eps'), format="eps")
-        fig3.clf()
-        plt.close()
+        # fig3.clf()
+        # plt.close()
 
     def plot_b_omega_3(self, t, b_omega):
 
@@ -878,20 +885,20 @@ class GyroLearningBasedProcessing(LearningBasedProcessing):
         axs2[1].plot(t, b_omega[:, 1])
         axs2[2].plot(t, b_omega[:, 2])
 
-        axs2[0].set(xlabel='time (s)', ylabel='$\mathbf{b_omega}_n$ (rad/s)', title="b_omega0")
-        axs2[1].set(xlabel='time (s)', ylabel='$\mathbf{b_omega}_n$ (rad/s)', title="b_omega1")
-        axs2[2].set(xlabel='time (s)', ylabel='$\mathbf{b_omega}_n$ (rad/s)', title="b_omega2")
+        axs2[0].set(xlabel='time (s)', ylabel='$\mathbf{b}_{n}^{\mathbf{\omega}_x}$ (rad/s)', title="Bias Gyro X")
+        axs2[1].set(xlabel='time (s)', ylabel='$\mathbf{b}_{n}^{\mathbf{\omega}_y}$ (rad/s)', title="Bias Gyro Y")
+        axs2[2].set(xlabel='time (s)', ylabel='$\mathbf{b}_{n}^{\mathbf{\omega}_z}$ (rad/s)', title="Bias Gyro Z")
         axs2[0].grid()
         axs2[1].grid()
         axs2[2].grid()
-        axs2[0].legend(['$b_omega^x$'])
-        axs2[1].legend(['$b_omega^y$'])
-        axs2[2].legend(['$b_omega^z$'])
+        axs2[0].legend(['$\mathbf{b}_{\mathbf{\omega}_x}$'])
+        axs2[1].legend(['$\mathbf{b}_{\mathbf{\omega}_y}$'])
+        axs2[2].legend(['$\mathbf{b}_{\mathbf{\omega}_z}$'])
         fig_name = "b_omega_3"
         fig2.savefig(os.path.join(self.address, self.seq, fig_name + '.png'))
         # fig2.savefig(os.path.join(self.address, self.seq, fig_name + '.eps'), format="eps")
-        fig2.clf()
-        plt.close()
+        # fig2.clf()
+        # plt.close()
 
     def plot_b_acc_3(self, t, b_acc):
 
@@ -900,37 +907,37 @@ class GyroLearningBasedProcessing(LearningBasedProcessing):
         axs2[0].plot(t, b_acc[:, 0])
         axs2[1].plot(t, b_acc[:, 1])
         axs2[2].plot(t, b_acc[:, 2])
-        axs2[0].set(xlabel='time (s)', ylabel='$\mathbf{b_acc}_n$ (rad/s)', title="b_acc0")
-        axs2[1].set(xlabel='time (s)', ylabel='$\mathbf{b_acc}_n$ (rad/s)', title="b_acc1")
-        axs2[2].set(xlabel='time (s)', ylabel='$\mathbf{b_acc}_n$ (rad/s)', title="b_acc2")
+        axs2[0].set(xlabel='time (s)', ylabel='$\mathbf{b}_n^{\mathbf{a}_x}$ (m/s^2)', title="Bias Acc X")
+        axs2[1].set(xlabel='time (s)', ylabel='$\mathbf{b}_n^{\mathbf{a}_y}$ (m/s^2)', title="Bias Acc Y")
+        axs2[2].set(xlabel='time (s)', ylabel='$\mathbf{b}_n^{\mathbf{a}_z}$ (m/s^2)', title="Bias Acc Z")
         axs2[0].grid()
         axs2[1].grid()
         axs2[2].grid()
-        axs2[0].legend(['$b_acc^x$'])
-        axs2[1].legend(['$b_acc^y$'])
-        axs2[2].legend(['$b_acc^z$'])
+        axs2[0].legend(['$b_a^x$'])
+        axs2[1].legend(['$b_a^y$'])
+        axs2[2].legend(['$b_a^z$'])
         fig_name = "b_acc_3"
         fig2.savefig(os.path.join(self.address, self.seq, fig_name + '.png'))
         # fig2.savefig(os.path.join(self.address, self.seq, fig_name + '.eps'), format="eps")
-        fig2.clf()
-        plt.close()
+        # fig2.clf()
+        # plt.close()
 
     def plot_measurements_covs(self, t, measurements_covs):
 
         fig2, axs2 = plt.subplots(2, 1, sharex=True, figsize=(16, 9))
         axs2[0].plot(t, measurements_covs[:, 0])
         axs2[1].plot(t, measurements_covs[:, 1])
-        axs2[0].set(xlabel='time (s)', ylabel='$\mathbf{b_acc}_n$ (rad/s)', title="measurements_covs0")
-        axs2[1].set(xlabel='time (s)', ylabel='$\mathbf{b_acc}_n$ (rad/s)', title="measurements_covs1")
+        axs2[0].set(xlabel='time (s)', ylabel='$\mathbf{b^a}_n$ (m/s)', title="measurements_covs_y")
+        axs2[1].set(xlabel='time (s)', ylabel='$\mathbf{b^a}_n$ (m/s)', title="measurements_covs_z")
         axs2[0].grid()
         axs2[1].grid()
-        axs2[0].legend(['$measurements_covs_vy$'])
-        axs2[1].legend(['$measurements_covs_vz$'])
-        fig_name = "$measurements_covs"
+        axs2[0].legend(['$mescov_{\mathbf{v_y}}$'])
+        axs2[1].legend(['$mescov_{\mathbf{v_z}}$'])
+        fig_name = "measurements_covs"
         fig2.savefig(os.path.join(self.address, self.seq, fig_name + '.png'))
         # fig2.savefig(os.path.join(self.address, self.seq, fig_name + '.eps'), format="eps")
-        fig2.clf()
-        plt.close()
+        # fig2.clf()
+        # plt.close()
 
     def plot_ys_b_omega_3(self, tt, ys, us_noise, us):
         t = tt[:-1]
@@ -952,9 +959,9 @@ class GyroLearningBasedProcessing(LearningBasedProcessing):
         axs2[2].plot(t, b_omega[:, 2])
         axs2[2].plot(t, ys_b_omega[:, 2])
         # axs2[2].plot(t, gt[:, 2])
-        axs2[0].set(xlabel='time (s)', ylabel='$\mathbf{b_omega}_n$ (rad/s)', title="b_omega0")
-        axs2[1].set(xlabel='time (s)', ylabel='$\mathbf{b_omega}_n$ (rad/s)', title="b_omega1")
-        axs2[2].set(xlabel='time (s)', ylabel='$\mathbf{b_omega}_n$ (rad/s)', title="b_omega2")
+        axs2[0].set(xlabel='time (s)', ylabel='$\mathbf{b}_{\mathbf{omega}_n}$ (rad/s)', title="b_omega_x")
+        axs2[1].set(xlabel='time (s)', ylabel='$\mathbf{b}_{\mathbf{omega}_n}$ (rad/s)', title="b_omega_y")
+        axs2[2].set(xlabel='time (s)', ylabel='$\mathbf{b}_{\mathbf{omega}_n}$ (rad/s)', title="b_omega_z")
         axs2[0].grid()
         axs2[1].grid()
         axs2[2].grid()
@@ -962,15 +969,15 @@ class GyroLearningBasedProcessing(LearningBasedProcessing):
         # axs2[1].legend(['$ys_bomega^y$', '$us_bomega^y$', '$gt^y$'])
         # axs2[2].legend(['$ys_bomega^z$', '$us_bomega^z$', '$gt^z$'])
 
-        axs2[0].legend(['$us_bomega^x$', '$ys_bomega^x$'])
-        axs2[1].legend(['$us_bomega^y$', '$ys_bomega^y$'])
-        axs2[2].legend(['$us_bomega^z$', '$ys_bomega^z$'])
+        axs2[0].legend(['$us_{\mathbf{b_w}}^x$', '$ys_{\mathbf{b_w}}^x$'])
+        axs2[1].legend(['$us_{\mathbf{b_w}}^y$', '$ys_{\mathbf{b_w}}^y$'])
+        axs2[2].legend(['$us_{\mathbf{b_w}}^z$', '$ys_{\mathbf{b_w}}^z$'])
         fig_name = "ys_b_omega_3"
         fig2.savefig(os.path.join(self.address, self.seq, fig_name + '.png'))
         # fig2.savefig(os.path.join(self.address, self.seq, fig_name + '.eps'), format="eps")
 
-        fig2.clf()
-        plt.close()
+        # fig2.clf()
+        # plt.close()
 
     def plot_ys_b_acc_3(self, tt, ys, us_noise, us):
         # ys_b_acc = ys[:, 9:12]
@@ -994,23 +1001,23 @@ class GyroLearningBasedProcessing(LearningBasedProcessing):
         axs2[2].plot(t, b_omega[:, 2])
         axs2[2].plot(t, ys_b_omega[:, 2])
         # axs2[2].plot(t, gt[:, 2])
-        axs2[0].set(xlabel='time (s)', ylabel='$\mathbf{b_acc}_n$ (m/s)', title="b_acc0")
-        axs2[1].set(xlabel='time (s)', ylabel='$\mathbf{b_acc}_n$ (m/s)', title="b_acc1")
-        axs2[2].set(xlabel='time (s)', ylabel='$\mathbf{b_acc}_n$ (m/s)', title="b_acc2")
+        axs2[0].set(xlabel='time (s)', ylabel='$\mathbf{b}^x_n$ (m/s)', title="b_acc_x")
+        axs2[1].set(xlabel='time (s)', ylabel='$\mathbf{b}^y_n$ (m/s)', title="b_acc_y")
+        axs2[2].set(xlabel='time (s)', ylabel='$\mathbf{b}^z_n$ (m/s)', title="b_acc_z")
         axs2[0].grid()
         axs2[1].grid()
         axs2[2].grid()
         # axs2[0].legend(['ys_bacc^x$', 'us_bacc^x$', '$gt^x$'])
         # axs2[1].legend(['ys_bacc^y$', 'us_bacc^y$', '$gt^y$'])
         # axs2[2].legend(['ys_bacc^z$', 'us_bacc^z$', '$gt^z$'])
-        axs2[0].legend(['us_bacc^x$', 'ys_bacc^x$'])
-        axs2[1].legend(['us_bacc^y$', 'ys_bacc^y$'])
-        axs2[2].legend(['us_bacc^z$', 'ys_bacc^z$'])
+        axs2[0].legend(['$us_{\mathbf{b_a}}^x$', 'ys_{\mathbf{b_a}}^x$'])
+        axs2[1].legend(['$us_{\mathbf{b_a}}^y$', 'ys_{\mathbf{b_a}}^y$'])
+        axs2[2].legend(['$us_{\mathbf{b_a}}^z$', 'ys_{\mathbf{b_a}}^z$'])
         fig_name = "ys_b_acc_3"
         fig2.savefig(os.path.join(self.address, self.seq, fig_name + '.png'))
         # fig2.savefig(os.path.join(self.address, self.seq, fig_name + '.eps'), format="eps")
-        fig2.clf()
-        plt.close()
+        # fig2.clf()
+        # plt.close()
 
     def plot_usfix_us_omega_3(self, tt, us_fix, us_noise, us):
 
@@ -1033,21 +1040,21 @@ class GyroLearningBasedProcessing(LearningBasedProcessing):
         axs2[2].plot(t, us[:, 2])
         axs2[2].plot(t, us_fix[:, 2])
 
-        axs2[0].set(xlabel='time (s)', ylabel='$\mathbf{omega}_n$ (m/s)', title="omega0")
-        axs2[1].set(xlabel='time (s)', ylabel='$\mathbf{omega}_n$ (m/s)', title="omega1")
-        axs2[2].set(xlabel='time (s)', ylabel='$\mathbf{omega}_n$ (m/s)', title="omega2")
+        axs2[0].set(xlabel='time (s)', ylabel='$\mathbf{\omega}_n^x$ (rad/s)', title="Omega X")
+        axs2[1].set(xlabel='time (s)', ylabel='$\mathbf{\omega}_n^y$ (rad/s)', title="Omega Y")
+        axs2[2].set(xlabel='time (s)', ylabel='$\mathbf{\omega}_n^z$ (rad/s)', title="Omega Z")
         axs2[0].grid()
         axs2[1].grid()
         axs2[2].grid()
-        axs2[0].legend(['$us_noise^x$', '$us^x$', '$us_fix^x$'])
-        axs2[1].legend(['$us_noise^y$', '$us^y$', '$us_fix^y$'])
-        axs2[2].legend(['$us_noise^z$', '$us^z$', '$us_fix^z$'])
+        axs2[0].legend(['$us_{\mathbf{noise}}^x$', '$us^x$', '$us_{\mathbf{fix}}^x$'])
+        axs2[1].legend(['$us_{\mathbf{noise}}^y$', '$us^y$', '$us_{\mathbf{fix}}^y$'])
+        axs2[2].legend(['$us_{\mathbf{noise}}^z$', '$us^z$', '$us_{\mathbf{fix}}^z$'])
 
         fig_name = "usfix_us_omega_3"
         fig2.savefig(os.path.join(self.address, self.seq, fig_name + '.png'))
         # fig2.savefig(os.path.join(self.address, self.seq, fig_name + '.eps'), format="eps")
-        fig2.clf()
-        plt.close()
+        # fig2.clf()
+        # plt.close()
 
     def plot_usfix_us_acc_3(self, tt, us_fix, us_noise, us):
 
@@ -1068,22 +1075,22 @@ class GyroLearningBasedProcessing(LearningBasedProcessing):
         axs2[2].plot(t, us_fix[:, 2])
 
 
-        axs2[0].set(xlabel='time (s)', ylabel='$\mathbf{acc}_n$ (m/s)', title="acc0")
-        axs2[1].set(xlabel='time (s)', ylabel='$\mathbf{acc}_n$ (m/s)', title="acc1")
-        axs2[2].set(xlabel='time (s)', ylabel='$\mathbf{acc}_n$ (m/s)', title="acc2")
+        axs2[0].set(xlabel='time (s)', ylabel='$\mathbf{a}_n^x$ (m/$\mathrm{s}^2$)', title="Acc X")
+        axs2[1].set(xlabel='time (s)', ylabel='$\mathbf{a}_n^y$ (m/$\mathrm{s}^2$)', title="Acc Y")
+        axs2[2].set(xlabel='time (s)', ylabel='$\mathbf{a}_n^z$ (m/$\mathrm{s}^2$)', title="Acc Z")
         axs2[0].grid()
         axs2[1].grid()
         axs2[2].grid()
 
-        axs2[0].legend(['$us_noise^x$', '$us^x$', '$us_fix^x$'])
-        axs2[1].legend(['$us_noise^y$', '$us^y$', '$us_fix^y$'])
-        axs2[2].legend(['$us_noise^z$', '$us^z$', '$us_fix^z$'])
+        axs2[0].legend(['$us_{\mathbf{noise}}^x$', '$us^x$', '$us_{\mathbf{fix}}^x$'])
+        axs2[1].legend(['$us_{\mathbf{noise}}^y$', '$us^y$', '$us_{\mathbf{fix}}^y$'])
+        axs2[2].legend(['$us_{\mathbf{noise}}^z$', '$us^z$', '$us_{\mathbf{fix}}^z$'])
 
         fig_name = "usfix_us_acc_3"
         fig2.savefig(os.path.join(self.address, self.seq, fig_name + '.png'))
         # fig2.savefig(os.path.join(self.address, self.seq, fig_name + '.eps'), format="eps")
-        fig2.clf()
-        plt.close()
+        # fig2.clf()
+        # plt.close()
 
     def plot_xs_hatxs_acc_3(self, t, xs, hat_xs):
         fig1, axs1 = plt.subplots(3, 1, sharex=True, figsize=(16, 9))
@@ -1093,9 +1100,9 @@ class GyroLearningBasedProcessing(LearningBasedProcessing):
         axs1[1].plot(t, hat_xs[:, 1])
         axs1[2].plot(t, xs[:, 2])
         axs1[2].plot(t, hat_xs[:, 2])
-        axs1[0].set(xlabel='time (s)', ylabel='$\mathbf{xs_dv}_n$ (m)', title="xs_dv0")
-        axs1[1].set(xlabel='time (s)', ylabel='$\mathbf{xs_dv}_n$ (m)', title="xs_dv1")
-        axs1[2].set(xlabel='time (s)', ylabel='$\mathbf{xs_dv}_n$ (m)', title="xs_dv2")
+        axs1[0].set(xlabel='time (s)', ylabel='$\mathbf{xs_\mathbf{dv_n}}$ (m/s)', title="xs_dv_x")
+        axs1[1].set(xlabel='time (s)', ylabel='$\mathbf{xs_\mathbf{dv_n}}$ (m/s)', title="xs_dv_x")
+        axs1[2].set(xlabel='time (s)', ylabel='$\mathbf{xs_\mathbf{dv_n}}$ (m/s)', title="xs_dv_z")
         axs1[0].grid()
         axs1[1].grid()
         axs1[2].grid()
@@ -1105,8 +1112,8 @@ class GyroLearningBasedProcessing(LearningBasedProcessing):
         fig_name = "dv_3"
         fig1.savefig(os.path.join(self.address, self.seq, fig_name + '.png'))
         # fig1.savefig(os.path.join(self.address, self.seq, fig_name + '.eps'), format="eps")
-        fig1.clf()
-        plt.close()
+        # fig1.clf()
+        # plt.close()
 
     @property
     def end_title(self):
