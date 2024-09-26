@@ -110,9 +110,13 @@ class LearningBasedProcessing:
         self.net = self.net
         mean_u, std_u = dataset_train.mean_u.cpu(), dataset_train.std_u.cpu()
         self.net.set_normalized_factors(mean_u, std_u)
-
+        
+        sample_data = next(iter(dataloader))
+        t, us, xs, p_gt, v_gt, ang_gt, name = sample_data
+        us_noise = dataset_train.add_noise(us) 
         # start tensorboard writer
         writer = SummaryWriter(self.tb_address)
+        writer.add_graph(self.net, us_noise)
         start_time = time.time()
         best_loss = torch.Tensor([float('Inf')])
 
@@ -191,6 +195,7 @@ class LearningBasedProcessing:
         fig_loss.savefig(os.path.join(self.address, fig_name + '.png'))
         fig_loss.clf()
         plt.close()
+        writer.close()
 
 
     def pre_loop_train(self, dataloader, optimizer, criterion):
@@ -674,21 +679,23 @@ class GyroLearningBasedProcessing(LearningBasedProcessing):
             self.plot_V_3(t, v, v_gt)
             # p
             self.plot_P_xy(p, p_gt)
+            self.plot_P_x_y_theta_delta(p, p_gt, ang[:, 2], ang_gt[:, 2])
+            # self.plot_error_delta(p, p_gt, 100)
             # RPY
             self.plot_RPY(t, ang, ang_gt)
-            # b_omega
-            self.plot_b_omega_3(t, b_omega)
-            # b_omega
-            self.plot_b_acc_3(t, b_acc)
+            # # b_omega
+            # self.plot_b_omega_3(t, b_omega)
+            # # b_omega
+            # self.plot_b_acc_3(t, b_acc)
 
-            # measurements_covs
-            self.plot_measurements_covs(t, measurements_covs)
+            # # measurements_covs
+            # self.plot_measurements_covs(t, measurements_covs)
 
-            self.plot_ys_b_omega_3(t, ys, us_noise, us)
-            self.plot_ys_b_acc_3(t, ys, us_noise, us)
+            # self.plot_ys_b_omega_3(t, ys, us_noise, us)
+            # self.plot_ys_b_acc_3(t, ys, us_noise, us)
             self.plot_usfix_us_omega_3(t, us_fix[:, :3], us_noise[:, :3], us[:, :3])
-            self.plot_usfix_us_acc_3(t, us_fix[:, 3:6], us_noise[:, 3:6], us[:, 3:6])
-            self.plot_xs_hatxs_acc_3(t[:-1], xs[:-1, 3:6], hat_xs[:, 3:6])
+            # self.plot_usfix_us_acc_3(t, us_fix[:, 3:6], us_noise[:, 3:6], us[:, 3:6])
+            # self.plot_xs_hatxs_acc_3(t[:-1], xs[:-1, 3:6], hat_xs[:, 3:6])
             plt.show(block=True)
 
 
@@ -876,6 +883,137 @@ class GyroLearningBasedProcessing(LearningBasedProcessing):
         # fig3.savefig(os.path.join(self.address, self.seq, fig_name + '.eps'), format="eps")
         # fig3.clf()
         # plt.close()
+
+    def plot_P_x_y_theta_delta(self, p, p_gt, yaw, yaw_gt ):
+        dp = p[1:, :] - p[:-1, :]  # Delta for the estimated position
+        dp_gt = p_gt[1:, :] - p_gt[:-1, :]  # Delta for the ground truth position
+        dp_x = dp[:, 0]
+        dp_y = dp[:, 1]
+        dp_gt_x = dp_gt[:, 0]
+        dp_gt_y = dp_gt[:, 1]
+        dp_yaw = yaw[1:] - yaw[:-1]
+        dp_yaw_gt = yaw_gt[1:] - yaw_gt[:-1]
+
+        fig, axs = plt.subplots(3, 1, figsize=(12, 10), sharex=True)
+        # Plot dp_x and dp_gt_x on the first axis
+        axs[0].plot(dp_x, label='Δp_x (Estimated)', color='green', linestyle='-', linewidth=2)
+        axs[0].plot(dp_gt_x, label='Δp_x (Ground Truth)', color='red', linestyle='--', linewidth=2)
+        axs[0].set_ylabel('Δp_x (m)', fontsize=14)
+        axs[0].legend(loc='upper right', fontsize=12)
+        axs[0].grid(True)
+        axs[0].set_title('Delta X Coordinates (Δp_x)', fontsize=16)
+
+         # Plot dp_y and dp_gt_y on the second axis
+        axs[1].plot(dp_y, label='Δp_y (Estimated)', color='green', linestyle='-', linewidth=2)
+        axs[1].plot(dp_gt_y, label='Δp_y (Ground Truth)', color='red', linestyle='--', linewidth=2)
+        axs[1].set_ylabel('Δp_y (m)', fontsize=14)
+        axs[1].set_xlabel('Time (Samples)', fontsize=14)
+        axs[1].legend(loc='upper right', fontsize=12)
+        axs[1].grid(True)
+        axs[1].set_title('Delta Y Coordinates (Δp_y)', fontsize=16)
+
+        axs[2].plot(dp_yaw, label='Δyaw (Estimated)', color='green', linestyle='-', linewidth=2)
+        axs[2].plot(dp_yaw_gt, label='Δyaw (Ground Truth)', color='red', linestyle='--', linewidth=2)
+        axs[2].set_ylabel('Δyaw (rad)', fontsize=14)
+        axs[2].set_xlabel('Time (Samples)', fontsize=14)
+        axs[2].legend(loc='upper right', fontsize=12)
+        axs[2].grid(True)
+        axs[2].set_title('Delta yaw (Δyaw)', fontsize=16)
+        
+        fig.tight_layout()
+
+        fig_name = "delta_p_x_y_theta"
+        fig.savefig(os.path.join(self.address, self.seq, fig_name + '.svg'), format='svg', bbox_inches='tight', pad_inches=0.02)
+
+    def plot_error_delta(self, p, p_gt, segment_size):
+        # Assume p and p_gt are provided as NumPy arrays or convert them from PyTorch tensors
+        # Example p and p_gt (replace with actual data or convert from torch)
+        num_samples = p.shape[0]
+        p = p.numpy()
+        p_gt = p_gt.numpy()
+
+        # Initialize lists to store RMSE, MAE, and Relative Error for each dimension (x, y, z)
+        rmse_x_list, rmse_y_list, rmse_z_list = [], [], []
+        mae_x_list, mae_y_list, mae_z_list = [], [], []
+        rel_error_x_list, rel_error_y_list, rel_error_z_list = [], [], []
+
+        # Segment size
+        segment_size = 100
+
+        # Iterate over the data in chunks of segment_size (100 samples each)
+        for i in range(0, num_samples, segment_size):
+            # Define the end index for the current segment
+            end_idx = min(i + segment_size, num_samples)
+
+            # Get the segment for both p and p_gt
+            p_segment = p[i:end_idx]
+            p_gt_segment = p_gt[i:end_idx]
+
+            # Calculate the errors for the current segment
+            error = p_segment - p_gt_segment
+
+            # RMSE for x, y, z components
+            rmse_x = np.sqrt(np.mean((error[:, 0]) ** 2))
+            rmse_y = np.sqrt(np.mean((error[:, 1]) ** 2))
+            rmse_z = np.sqrt(np.mean((error[:, 2]) ** 2))
+
+            rmse_x_list.append(rmse_x)
+            rmse_y_list.append(rmse_y)
+            rmse_z_list.append(rmse_z)
+
+            # MAE for x, y, z components
+            mae_x = np.mean(np.abs(error[:, 0]))
+            mae_y = np.mean(np.abs(error[:, 1]))
+            mae_z = np.mean(np.abs(error[:, 2]))
+
+            mae_x_list.append(mae_x)
+            mae_y_list.append(mae_y)
+            mae_z_list.append(mae_z)
+
+            # Relative Error for x, y, z components
+            rel_error_x = np.mean(np.abs(error[:, 0]) / (np.abs(p_gt_segment[:, 0]) + 1e-8))
+            rel_error_y = np.mean(np.abs(error[:, 1]) / (np.abs(p_gt_segment[:, 1]) + 1e-8))
+            rel_error_z = np.mean(np.abs(error[:, 2]) / (np.abs(p_gt_segment[:, 2]) + 1e-8))
+
+            rel_error_x_list.append(rel_error_x)
+            rel_error_y_list.append(rel_error_y)
+            rel_error_z_list.append(rel_error_z)
+
+        # Plot RMSE, MAE, and Relative Error for x, y, and z in three subplots
+        fig, axs = plt.subplots(3, 1, figsize=(10, 15), sharex=True)
+
+        # RMSE for x, y, z components
+        axs[0].plot(np.arange(1, len(rmse_x_list) + 1), rmse_x_list, label='RMSE (x)', color='blue', marker='o')
+        axs[0].plot(np.arange(1, len(rmse_y_list) + 1), rmse_y_list, label='RMSE (y)', color='red', marker='x')
+        axs[0].plot(np.arange(1, len(rmse_z_list) + 1), rmse_z_list, label='RMSE (z)', color='green', marker='s')
+        axs[0].set_ylabel('RMSE')
+        axs[0].grid(True)
+        axs[0].legend(loc='upper right')
+
+        # MAE for x, y, z components
+        axs[1].plot(np.arange(1, len(mae_x_list) + 1), mae_x_list, label='MAE (x)', color='blue', marker='o')
+        axs[1].plot(np.arange(1, len(mae_y_list) + 1), mae_y_list, label='MAE (y)', color='red', marker='x')
+        axs[1].plot(np.arange(1, len(mae_z_list) + 1), mae_z_list, label='MAE (z)', color='green', marker='s')
+        axs[1].set_ylabel('MAE')
+        axs[1].grid(True)
+        axs[1].legend(loc='upper right')
+
+        # Relative Error for x, y, z components
+        axs[2].plot(np.arange(1, len(rel_error_x_list) + 1), rel_error_x_list, label='Relative Error (x)', color='blue', marker='o')
+        axs[2].plot(np.arange(1, len(rel_error_y_list) + 1), rel_error_y_list, label='Relative Error (y)', color='red', marker='x')
+        axs[2].plot(np.arange(1, len(rel_error_z_list) + 1), rel_error_z_list, label='Relative Error (z)', color='green', marker='s')
+        axs[2].set_ylabel('Relative Error')
+        axs[2].set_xlabel('Segment Number')
+        axs[2].grid(True)
+        axs[2].legend(loc='upper right')
+
+        # Adjust layout
+        fig.tight_layout()
+
+        # Save figure
+        fig_name = "delta_errors_xyz"
+        fig.savefig(os.path.join(self.address, self.seq, fig_name + '.svg'), format='svg', bbox_inches='tight', pad_inches=0.02)
+
 
     def plot_b_omega_3(self, t, b_omega):
 
