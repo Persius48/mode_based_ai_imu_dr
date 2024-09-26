@@ -84,7 +84,7 @@ class LearningBasedProcessing:
         dataset_train.init_train()
         dataset_val = dataset_class(**dataset_params, mode='val')
         dataset_val.init_val()
-
+        iekf = IEKF()
         # get class
         Optimizer = train_params['optimizer_class']
         Scheduler = train_params['scheduler_class']
@@ -150,14 +150,14 @@ class LearningBasedProcessing:
             writer.add_scalar('loss/val', loss.item(), epoch)
             return best_loss
 
-        n_pre_epochs = 4000
+        n_pre_epochs = 10
         pre_loss_epoch_train = torch.zeros(n_pre_epochs)
         for epoch in range(1, n_pre_epochs + 1):
             loss_epoch = self.pre_loop_train(dataloader, optimizer, criterion)
             pre_loss_epoch_train[epoch-1] = loss_epoch
             write(epoch, loss_epoch)
             scheduler.step(epoch)
-            if epoch % 50 == 0:
+            if epoch % 10 == 0:
                 # loss = self.loop_val(dataset_val, criterion)
                 loss = self.pre_loop_val(dataloader, criterion)
                 write_time(epoch, start_time)
@@ -170,7 +170,7 @@ class LearningBasedProcessing:
         # training loop !
         loss_epoch_train = torch.zeros(n_epochs)
         for epoch in range(1, n_epochs + 1):
-            loss_epoch = self.loop_train(dataloader, optimizer, criterion)
+            loss_epoch = self.loop_train(dataloader, optimizer, criterion, iekf)
             loss_epoch_train[epoch-1] = loss_epoch
             write(epoch, loss_epoch)
             scheduler.step(epoch)
@@ -330,12 +330,11 @@ class LearningBasedProcessing:
         self.net.train()
         return loss_epoch
 
-    def loop_train(self, dataloader, optimizer, criterion):
+    def loop_train(self, dataloader, optimizer, criterion, iekf):
         """Forward-backward loop over training data"""
         loss_epoch = 0
         optimizer.zero_grad()
 
-        iekf = IEKF()
         for t, us, xs, p_gt, v_gt, ang_gt, name in dataloader:
             t, us, xs, p_gt, v_gt, ang_gt = t, us, xs, p_gt, v_gt, ang_gt
             us_noise = dataloader.dataset.add_noise(us)
