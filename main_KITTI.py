@@ -9,7 +9,7 @@ import numpy as np
 from multiprocessing import cpu_count
 
 base_dir = os.path.dirname(os.path.realpath(__file__))
-display_only = True
+display_only = False
 data_dir = "H:/KITTI/RAW/total"
 # test a given network
 # address = os.path.join(base_dir, 'results/KITTI/2022_05_20_08_29_38/')
@@ -41,7 +41,7 @@ dataset_params = {
     # set train, val and test sequence
     'train_seqs': [
          '2011_09_26_drive_0022_extract',
-         '2011_09_29_drive_0071_extract',
+        #  '2011_09_29_drive_0071_extract',
         #  '2011_09_30_drive_0018_extract',
         #  '2011_09_30_drive_0020_extract',
         #  '2011_09_30_drive_0027_extract',
@@ -52,7 +52,7 @@ dataset_params = {
     ],
     'val_seqs': [
         '2011_09_26_drive_0022_extract',
-        '2011_09_29_drive_0071_extract',
+        # '2011_09_29_drive_0071_extract',
         # '2011_09_30_drive_0018_extract',
         # '2011_09_30_drive_0020_extract',
         # '2011_09_30_drive_0027_extract',
@@ -114,7 +114,7 @@ train_params = {
     # frequency of validation step
     'freq_val': 50,
     # total number of epochs
-    'n_epochs': 1800,
+    'n_epochs': 1,
     # where record results ?
     'res_dir': os.path.join(base_dir, "results/KITTI"),
     # where record Tensorboard log ?
@@ -128,12 +128,12 @@ train_params = {
 # Train on training data set
 ################################################################################
 
-learning_process = lr.GyroLearningBasedProcessing(train_params['res_dir'],
-   train_params['tb_dir'], net_class, net_params, None,
-   train_params['loss']['dt'])
-learning_process.train(dataset_class, dataset_params, train_params)
+# learning_process = lr.GyroLearningBasedProcessing(train_params['res_dir'],
+#    train_params['tb_dir'], net_class, net_params, None,
+#    train_params['loss']['dt'])
+# learning_process.train(dataset_class, dataset_params, train_params)
 
-print("finish training")
+# print("finish training")
 
 ################################################################################
 # Test on full data set

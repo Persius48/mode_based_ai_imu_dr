@@ -36,7 +36,7 @@ class LearningBasedProcessing:
         self.figsize = (20, 12)
         self.dt = dt  # (s)
         self.address, self.tb_address = self.find_address(address)
-
+        self.iekf = IEKF()
         self.g = torch.Tensor([0, 0, -9.80665])
         if address is None:  # create new address
             pdump(self.net_params, self.address, 'net_params.p')
@@ -48,7 +48,7 @@ class LearningBasedProcessing:
         self.path_weights = os.path.join(self.address, 'weights.pt')
         self.net = self.net_class(**self.net_params)
         if self._ready:  # fill network parameters
-            self.load_weights()
+            self.load_weights(self.iekf)
 
     def find_address(self, address):
         """return path where net and training info are saved"""
@@ -65,9 +65,23 @@ class LearningBasedProcessing:
             tb_address = None
         return address, tb_address
 
-    def load_weights(self):
-        weights = torch.load(self.path_weights)
-        self.net.load_state_dict(weights)
+    # def load_weights(self):
+    #     weights = torch.load(self.path_weights)
+    #     self.net.load_state_dict(weights)
+
+    def load_weights(self, iekf):
+        """Load the weights for the net and IEKF components from the saved file"""
+
+        # Load the checkpoint from the file
+        checkpoint = torch.load(self.path_weights)
+
+        # Load net parameters
+        self.net.load_state_dict(checkpoint['net_state_dict'])
+
+        # Load IEKF parameters (for InitProcessCovNet layers)
+        iekf.initprocesscov_net.factor_initial_covariance.load_state_dict(checkpoint['init_cov_state_dict'])
+        iekf.initprocesscov_net.factor_process_covariance.load_state_dict(checkpoint['process_cov_state_dict'])
+
 
 
     def train(self, dataset_class, dataset_params, train_params):
@@ -84,7 +98,7 @@ class LearningBasedProcessing:
         dataset_train.init_train()
         dataset_val = dataset_class(**dataset_params, mode='val')
         dataset_val.init_val()
-        iekf = IEKF()
+        # iekf = IEKF()
         # get class
         Optimizer = train_params['optimizer_class']
         Scheduler = train_params['scheduler_class']
@@ -141,7 +155,7 @@ class LearningBasedProcessing:
                                                                best_loss.item())
                 cprint(msg, 'green')
                 best_loss = loss
-                self.save_net()
+                self.save_net(self.iekf)
             else:
                 msg = 'validation loss increases! :( '
                 msg += '(curr/prev loss {:.4f}/{:.4f})'.format(loss.item(),
@@ -150,14 +164,14 @@ class LearningBasedProcessing:
             writer.add_scalar('loss/val', loss.item(), epoch)
             return best_loss
 
-        n_pre_epochs = 10
+        n_pre_epochs = 5
         pre_loss_epoch_train = torch.zeros(n_pre_epochs)
         for epoch in range(1, n_pre_epochs + 1):
             loss_epoch = self.pre_loop_train(dataloader, optimizer, criterion)
             pre_loss_epoch_train[epoch-1] = loss_epoch
             write(epoch, loss_epoch)
             scheduler.step(epoch)
-            if epoch % 10 == 0:
+            if epoch % 5 == 0:
                 # loss = self.loop_val(dataset_val, criterion)
                 loss = self.pre_loop_val(dataloader, criterion)
                 write_time(epoch, start_time)
@@ -170,13 +184,13 @@ class LearningBasedProcessing:
         # training loop !
         loss_epoch_train = torch.zeros(n_epochs)
         for epoch in range(1, n_epochs + 1):
-            loss_epoch = self.loop_train(dataloader, optimizer, criterion, iekf)
+            loss_epoch = self.loop_train(dataloader, optimizer, criterion, self.iekf)
             loss_epoch_train[epoch-1] = loss_epoch
             write(epoch, loss_epoch)
             scheduler.step(epoch)
             if epoch % freq_val == 0:
                 # loss = self.loop_val(dataset_val, criterion)
-                loss = self.loop_val(dataloader, criterion)
+                loss = self.loop_val(dataloader, criterion, self.iekf)
                 write_time(epoch, start_time)
                 best_loss = write_val(loss, best_loss)
                 start_time = time.time()
@@ -406,11 +420,11 @@ class LearningBasedProcessing:
         optimizer.step()
         return loss_epoch
 
-    def loop_val(self, dataloader, criterion):
+    def loop_val(self, dataloader, criterion, iekf):
         """Forward loop over validation data"""
         loss_epoch = 0
         self.net.eval()
-        iekf = IEKF()
+        # iekf = IEKF()
         with torch.no_grad():
             for t, us, xs, p_gt, v_gt, ang_gt, name in dataloader:
                 t, us, xs, p_gt, v_gt, ang_gt = t, us, xs, p_gt, v_gt, ang_gt
@@ -422,7 +436,7 @@ class LearningBasedProcessing:
                 time_IEKF = time.time()
 
                 us_fix = ys[:, :, :6] * us_noise[:, :, :6] - ys[:, :, 6:12]
-                iekf.set_Q()
+                self.iekf.set_Q()
                 measurements_covs = ys[:, :, 12:14]
 
                 Rot, v, p, b_omega, b_acc, Rot_c_i, t_c_i = \
@@ -463,11 +477,31 @@ class LearningBasedProcessing:
         self.net.train()
         return loss_epoch
 
-    def save_net(self):
-        """save the weights on the net in CPU"""
+    # def save_net(self):
+    #     """save the weights on the net in CPU"""
+    #     self.net.eval().cpu()
+    #     torch.save(self.net.state_dict(), self.path_weights)
+    #     self.net.train()
+
+    def save_net(self, iekf):
+        """Save the weights for both the net and IEKF components"""
+
+        # Move the net to CPU for saving
         self.net.eval().cpu()
-        torch.save(self.net.state_dict(), self.path_weights)
+
+        # Create a dictionary to store the model and IEKF state
+        save_dict = {
+            'net_state_dict': self.net.state_dict(),
+            'init_cov_state_dict': iekf.initprocesscov_net.factor_initial_covariance.state_dict(),
+            'process_cov_state_dict': iekf.initprocesscov_net.factor_process_covariance.state_dict()
+        }
+
+        # Save the dictionary to the path
+        torch.save(save_dict, self.path_weights)
+
+        # Set the net back to training mode
         self.net.train()
+
 
     def get_hparams(self, dataset_class, dataset_params, train_params):
         """return all training hyperparameters in a dict"""
@@ -506,15 +540,15 @@ class LearningBasedProcessing:
             if display_only:
                 self.display_test(dataset, mode)
             else:
-                self.loop_test(dataset, criterion)
+                self.loop_test(dataset, criterion, self.iekf)
                 self.display_test(dataset, mode)
 
-    def loop_test(self, dataset, criterion):
+    def loop_test(self, dataset, criterion, iekf):
         """Forward loop over test data"""
         self.net.eval()
         for i in range(len(dataset)):
             seq = dataset.sequences[i]
-            iekf = IEKF()
+            # iekf = IEKF()
 
             t, us, xs, p_gt, v_gt, ang_gt, name = dataset[i]
 
