@@ -112,6 +112,7 @@ class LearningBasedProcessing:
 
         # define optimizer, scheduler and loss
         dataloader = DataLoader(dataset_train, **dataloader_params)
+        dataloader_val = DataLoader(dataset_val, **dataloader_params)
         optimizer = Optimizer(self.net.parameters(), **optimizer_params)
         scheduler = Scheduler(optimizer, **scheduler_params)
         criterion = Loss(**loss_params)
@@ -138,8 +139,8 @@ class LearningBasedProcessing:
         def write(epoch, loss_epoch):
             writer.add_scalar('loss/train', loss_epoch.item(), epoch)
             writer.add_scalar('lr', optimizer.param_groups[0]['lr'], epoch)
-            print('Train Epoch: {:2d} \tLoss: {:.4f}'.format(
-                epoch, loss_epoch.item()))
+            cprint('Train Epoch: {:2d} \tLoss: {:.4f}'.format(
+                epoch, loss_epoch.item()), 'green')
             scheduler.step(epoch)
 
         def write_time(epoch, start_time):
@@ -164,14 +165,14 @@ class LearningBasedProcessing:
             writer.add_scalar('loss/val', loss.item(), epoch)
             return best_loss
 
-        n_pre_epochs = 5
+        n_pre_epochs = 4000
         pre_loss_epoch_train = torch.zeros(n_pre_epochs)
         for epoch in range(1, n_pre_epochs + 1):
             loss_epoch = self.pre_loop_train(dataloader, optimizer, criterion)
             pre_loss_epoch_train[epoch-1] = loss_epoch
             write(epoch, loss_epoch)
             scheduler.step(epoch)
-            if epoch % 5 == 0:
+            if epoch % 50 == 0:
                 # loss = self.loop_val(dataset_val, criterion)
                 loss = self.pre_loop_val(dataloader, criterion)
                 write_time(epoch, start_time)
@@ -188,9 +189,9 @@ class LearningBasedProcessing:
             loss_epoch_train[epoch-1] = loss_epoch
             write(epoch, loss_epoch)
             scheduler.step(epoch)
-            if epoch % freq_val == 0:
+            if epoch % freq_val  == 0:   
                 # loss = self.loop_val(dataset_val, criterion)
-                loss = self.loop_val(dataloader, criterion, self.iekf)
+                loss = self.loop_val(dataloader_val, criterion, self.iekf)
                 write_time(epoch, start_time)
                 best_loss = write_val(loss, best_loss)
                 start_time = time.time()
@@ -403,6 +404,9 @@ class LearningBasedProcessing:
             hat_xs = torch.cat((hat_xi.clone(), hat_dv.clone(),
                                 hat_dxi_ij.clone(), hat_dv_ij.clone(), hat_dp_ij.clone()), dim=2)
 
+            # def print_grad(grad):
+            #     print("Gradient on model.fc1.weight:\n", grad)
+            # iekf.initprocesscov_net.factor_process_covariance.weight.register_hook(print_grad)
 
             loss = criterion(xs[:, :-1, :], hat_xs) / len(dataloader)
 

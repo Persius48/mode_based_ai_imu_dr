@@ -57,14 +57,15 @@ class BaseDataset(Dataset):
         mondict = self.load_seq(i)
         N_max = mondict['xs'].shape[0]
         if self._train: # random start
-            # n0 = torch.randint(0, 100, (1,))
-            n0 = torch.randint(0, 40*100, (1, ))
+            # n0 = torch.randint(0, 40*100, (1, ))
+            # nend = n0 + self.N
+            n0 = 10 * int(np.random.randint(0, (N_max - self.N)/10))
             nend = n0 + self.N
         elif self._val: # end sequence
-            # n0 = 0
-            n0 = 40 * 100 + self.N
-            # nend = N_max
-            nend = n0 + self.N
+            n0 = 0
+            # n0 = 40 * 100 + self.N
+            nend = N_max
+            # nend = n0 + self.N
         else:  # full sequence
             n0 = 0
             # nend = n0 + 3*self.N+100
@@ -87,33 +88,28 @@ class BaseDataset(Dataset):
 
         # noise density
         imu_std = torch.Tensor([1e-3, 1e-2]).double()
+        #in run bias stability
+        imu_bias = torch.Tensor([1e-5, 1e-4]).double()
         # bias repeatability (without in-run bias stability)
         imu_b0 = torch.Tensor([[1e-5, 1e-5], [2e-2, 5e-1]]).double()
         # imu_b0 = torch.Tensor([[5e-3, 5e-2], [2e-2, 5e-1]]).double() #random bias between 0.015-0.025 for gyro & 0.45-0.55 for acc
-        # #bias stabiliy of 26 degrees/hour and 1mg
-        # imu_b = torch.Tensor([1.e-5,1.e-4])
+
 
         noise = torch.randn_like(u)
-        bias_stability = torch.randn_like(u)    
+        bias = torch.randn_like(u)    
 
         noise[:, :, :3] = noise[:, :, :3] * imu_std[0]
         noise[:, :, 3:6] = noise[:, :, 3:6] * imu_std[1]
- 
-        # bias_stability[:, :, :3] =  bias_stability[:, :, :3]  * imu_b[0]
-        # bias_stability[:, :, 3:6] = bias_stability[:, :, 3:6] * imu_b[1]
 
-        # Generate cumulative bias drift (random walk) for instability
-        # bias_drift = torch.cumsum(bias_stability, dim=1)  # Cumulative sum along time axis
-        # bias repeatability (without in run bias stability)
+        bias[:, :, :3] = bias[:, :, :3] * imu_bias[0]
+        bias[:, :, 3:6] = bias[:, :, 3:6] * imu_bias[1]
+
         b0 = self.uni.sample(u[:, 0].shape)
-        #bias instability
-
-
         b0[:, :3, :] = b0[:, :3, :] * imu_b0[0, 0] + imu_b0[1, 0]
         b0[:, 3:6, :] = b0[:, 3:6, :] * imu_b0[0, 1] + imu_b0[1, 1]
 
 
-        u = u + noise + b0.transpose(1, 2) #+  bias_drift
+        u = u + noise + b0.transpose(1, 2) + bias 
         # u = u + noise + b0[:, :, :, 0]
         return u
 

@@ -40,42 +40,44 @@ dataset_params = {
     'predata_dir': os.path.join(base_dir, 'data/KITTI'),
     # set train, val and test sequence
     'train_seqs': [
-         '2011_09_26_drive_0022_extract',
+        #  '2011_09_26_drive_0022_extract',
         #  '2011_09_29_drive_0071_extract',
         #  '2011_09_30_drive_0018_extract',
-        #  '2011_09_30_drive_0020_extract',
-        #  '2011_09_30_drive_0027_extract',
+         '2011_09_30_drive_0020_extract',
+         '2011_09_30_drive_0027_extract',
+         '2011_09_30_drive_0033_extract',
+         '2011_09_30_drive_0034_extract',
         #  '2011_09_30_drive_0028_extract',
         #  '2011_10_03_drive_0027_extract',
         #  '2011_10_03_drive_0034_extract',
         #  '2011_10_03_drive_0047_extract'
     ],
     'val_seqs': [
-        '2011_09_26_drive_0022_extract',
+        # '2011_09_26_drive_0022_extract',
         # '2011_09_29_drive_0071_extract',
         # '2011_09_30_drive_0018_extract',
         # '2011_09_30_drive_0020_extract',
         # '2011_09_30_drive_0027_extract',
-        # '2011_09_30_drive_0028_extract',
+        '2011_09_30_drive_0028_extract',
         # '2011_10_03_drive_0027_extract',
         # '2011_10_03_drive_0034_extract',
         # '2011_10_03_drive_0047_extract'
         ],
     'test_seqs': [
         '2011_09_26_drive_0036_extract',
-        # '2011_09_26_drive_0101_extract',
-        # '2011_09_30_drive_0033_extract',
-        # '2011_09_30_drive_0034_extract',
-        # '2011_10_03_drive_0042_extract',
-        # '2011_09_26_drive_0022_extract',
-        # '2011_09_29_drive_0071_extract',
-        # '2011_09_30_drive_0018_extract',
-        # '2011_09_30_drive_0020_extract',
-        # '2011_09_30_drive_0027_extract',
-        # '2011_09_30_drive_0028_extract',
-        # '2011_10_03_drive_0027_extract',
-        # '2011_10_03_drive_0034_extract',
-        # '2011_10_03_drive_0047_extract'
+        '2011_09_26_drive_0101_extract',
+        '2011_09_30_drive_0033_extract',
+        '2011_09_30_drive_0034_extract',
+        '2011_10_03_drive_0042_extract',
+        '2011_09_26_drive_0022_extract',
+        '2011_09_29_drive_0071_extract',
+        '2011_09_30_drive_0018_extract',
+        '2011_09_30_drive_0020_extract',
+        '2011_09_30_drive_0027_extract',
+        '2011_09_30_drive_0028_extract',
+        '2011_10_03_drive_0027_extract',
+        '2011_10_03_drive_0034_extract',
+        '2011_10_03_drive_0047_extract'
         ],
     # size of trajectory during training
     'N': 40 * 100,
@@ -114,7 +116,7 @@ train_params = {
     # frequency of validation step
     'freq_val': 50,
     # total number of epochs
-    'n_epochs': 1,
+    'n_epochs': 1800,
     # where record results ?
     'res_dir': os.path.join(base_dir, "results/KITTI"),
     # where record Tensorboard log ?
@@ -128,12 +130,12 @@ train_params = {
 # Train on training data set
 ################################################################################
 
-# learning_process = lr.GyroLearningBasedProcessing(train_params['res_dir'],
-#    train_params['tb_dir'], net_class, net_params, None,
-#    train_params['loss']['dt'])
-# learning_process.train(dataset_class, dataset_params, train_params)
+learning_process = lr.GyroLearningBasedProcessing(train_params['res_dir'],
+   train_params['tb_dir'], net_class, net_params, None,
+   train_params['loss']['dt'])
+learning_process.train(dataset_class, dataset_params, train_params)
 
-# print("finish training")
+print("finish training")
 
 ################################################################################
 # Test on full data set
